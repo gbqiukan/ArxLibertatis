@@ -109,7 +109,6 @@ PakFile * autodetectLanguage() {
 	return localisation;
 }
 
-
 static std::string removeStart(std::string str, std::string remove) {
 	return str.substr(remove.length(), str.length() - remove.length());
 }
@@ -143,8 +142,6 @@ static void loadLocalisations() {
 	BOOST_FOREACH(const LocalizationFiles::value_type & i, localizationFiles) {
 		std::string name = (i.second ? localizedPrefix : fallbackPrefix) + i.first;
 		
-		LogInfo << "Loading: " << name;
-		
 		PakFile * file = dir->getFile(name);
 		arx_assert(file);
 		
@@ -154,7 +151,14 @@ static void loadLocalisations() {
 			continue;
 		}
 		
-		buffer = util::convert<util::UTF16LE, util::UTF8>(buffer);
+		if(buffer.size() >= 2 && buffer[0] == '\xFF' && buffer[1] == '\xFE') {
+			LogWarning << "UTF16le character encoding is unsupported for new localizations "
+			              "please use UTF8 for file localisation/" << name;
+			continue;
+		}
+		
+		LogInfo << "Loading: " << name;
+		
 		std::istringstream iss(buffer);
 		if(!::g_localisation.read(iss)) {
 			LogWarning << "Error parsing localisation file localisation/" << name;
